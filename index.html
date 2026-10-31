@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1b24">
+  <meta name="description" content="Tetrihome — clear Tetris lines to ship blocks across the sky and build a Minecraft-style cottage.">
+  <title>Tetrihome — Tetris builds your Minecraft house</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b2029'/%3E%3Crect x='5' y='5' width='10' height='10' rx='2' fill='%23b46fe4'/%3E%3Crect x='17' y='5' width='10' height='10' rx='2' fill='%2354d9e8'/%3E%3Crect x='5' y='17' width='10' height='10' rx='2' fill='%2382e66f'/%3E%3Crect x='17' y='17' width='10' height='10' rx='2' fill='%23f2c94c'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-state="menu">
+  <canvas id="scene" aria-label="Interactive 3D Tetris board and floating cottage"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <header id="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="brand-word">TETRI<span>HOME</span></span>
+      <span class="brand-tag">blocks → home</span>
+    </div>
+
+    <div class="stats" aria-label="Game statistics">
+      <div class="stat"><span>SCORE</span><b id="score">0</b></div>
+      <div class="stat"><span>LINES</span><b id="lines">0</b></div>
+      <div class="stat"><span>LEVEL</span><b id="level">1</b></div>
+    </div>
+
+    <div class="top-actions">
+      <button id="soundBtn" class="icon-btn" type="button" aria-label="Mute sound" title="Mute sound">♪</button>
+      <button id="pauseBtn" class="icon-btn" type="button" aria-label="Pause" title="Pause">II</button>
+    </div>
+  </header>
+
+  <aside id="left-hud" aria-label="Piece queue">
+    <section class="panel next-panel">
+      <div class="panel-label">NEXT</div>
+      <div id="next" class="mini-list">
+        <div class="mini"></div>
+        <div class="mini"></div>
+        <div class="mini"></div>
+      </div>
+    </section>
+    <section class="panel hold-panel">
+      <div class="panel-label">HOLD <span>C</span></div>
+      <div id="hold" class="mini hold-mini"></div>
+    </section>
+  </aside>
+
+  <aside id="house-hud" aria-label="House progress">
+    <div class="panel house-panel">
+      <div class="house-top">
+        <span class="house-label">YOUR HOME</span>
+        <b id="house-percent">0%</b>
+      </div>
+      <div id="house-pips" class="pips" aria-hidden="true"></div>
+      <div class="house-meta">
+        <span id="house-stage">Blueprint</span>
+        <span id="house-lines">0 / 12 lines</span>
+      </div>
+      <div class="house-tip">Clear lines → ship blocks home</div>
+    </div>
+  </aside>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <b id="toast-title"></b>
+    <span id="toast-sub"></span>
+  </div>
+
+  <div id="controls-hint" aria-hidden="true">
+    <span><kbd>←</kbd><kbd>→</kbd> move</span>
+    <span><kbd>↑</kbd> rotate</span>
+    <span><kbd>↓</kbd> soft drop</span>
+    <span><kbd>space</kbd> drop</span>
+    <span><kbd>C</kbd> hold</span>
+    <span><kbd>P</kbd> pause</span>
+  </div>
+
+  <div id="touch" aria-label="Touch controls">
+    <div class="touch-pad">
+      <button class="touch-btn" data-action="left" type="button" aria-label="Move left">◀</button>
+      <button class="touch-btn touch-rotate" data-action="rotate" type="button" aria-label="Rotate">⟳</button>
+      <button class="touch-btn" data-action="right" type="button" aria-label="Move right">▶</button>
+      <button class="touch-btn touch-hold" data-action="hold" type="button" aria-label="Hold piece">HOLD</button>
+      <button class="touch-btn touch-down" data-action="down" type="button" aria-label="Soft drop">▼</button>
+    </div>
+    <button class="touch-drop" data-action="drop" type="button" aria-label="Hard drop">DROP</button>
+  </div>
+
+  <div id="hero" class="overlay hero-overlay">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span> A BLOCK-BUILDING PUZZLE</p>
+      <h1><span class="title-a">TETRI</span><span class="title-b">HOME</span></h1>
+      <p class="tagline">Clear lines. Ship blocks. Raise a Minecraft cottage in the sky.</p>
+
+      <div class="tetromino-art" aria-hidden="true">
+        <i class="t1"></i><i class="t2"></i><i class="t3"></i><i class="t4"></i>
+      </div>
+
+      <div class="hero-actions">
+        <button id="startBtn" class="btn primary" type="button" aria-label="Start">
+          Start <span class="btn-icon" aria-hidden="true">▶</span>
+        </button>
+        <div class="hero-note">12 lines = one very cozy home.</div>
+      </div>
+
+      <div class="feature-row" aria-hidden="true">
+        <span>3D TETRIS</span>
+        <span>VOXEL HOUSE</span>
+        <span>TOUCH READY</span>
+      </div>
+
+      <div class="hero-keys" aria-hidden="true">
+        <span><kbd>←</kbd><kbd>→</kbd> move</span>
+        <span><kbd>↑</kbd> rotate</span>
+        <span><kbd>space</kbd> hard drop</span>
+        <span><kbd>C</kbd> hold</span>
+      </div>
+    </div>
+
+    <div class="hero-stamp" aria-hidden="true">
+      <span>BLUEPRINT</span>
+      <b>COTTAGE_01</b>
+      <em>12 lines / 336 blocks</em>
+    </div>
+  </div>
+
+  <div id="pause" class="overlay modal-overlay hidden">
+    <div class="modal panel">
+      <p class="eyebrow">PAUSED</p>
+      <h2>Take a breath.</h2>
+      <p class="modal-copy">Your house isn't going anywhere.</p>
+      <div class="modal-actions">
+        <button id="resumeBtn" class="btn primary" type="button">Resume</button>
+        <button id="restartPauseBtn" class="btn ghost" type="button">Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="end" class="overlay modal-overlay hidden">
+    <div class="modal panel end-modal">
+      <p class="eyebrow" id="endKicker">HOUSE COMPLETE</p>
+      <h2 id="endTitle">HOME SWEET HOME</h2>
+      <p id="endSub" class="modal-copy">Every block found its place.</p>
+      <div class="result-grid">
+        <div><span>SCORE</span><b id="endScore">0</b></div>
+        <div><span>LINES</span><b id="endLines">0</b></div>
+        <div><span>BEST</span><b id="endBest">0</b></div>
+      </div>
+      <button id="againBtn" class="btn primary" type="button">Build again</button>
+      <p class="best-note">One more cottage? The sky's the limit.</p>
+    </div>
+  </div>
+
+  <noscript>This game needs JavaScript and WebGL.</noscript>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
